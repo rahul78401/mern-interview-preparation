@@ -4,7 +4,7 @@ A modular study guide for interview prep: modules and sub-modules, each with an 
 
 ## Run it
 
-Open `index.html` in a browser. That's it. It also works on any static host (GitHub Pages, Netlify, etc.).
+Open `index.html` in a browser. That's it. For a local server that never serves stale files, run `python serve.py` and open http://localhost:8888. It also works on any static host (GitHub Pages, Netlify, etc.).
 
 ## Structure
 

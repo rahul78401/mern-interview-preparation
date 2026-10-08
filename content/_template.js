@@ -33,8 +33,6 @@ Learn.register({
         {
           id: 'what-is-x',      // optional but recommended: keeps progress safe if you reorder
           q: 'The question?',
-          level: 'basic',       // basic | intermediate | advanced
-          tags: ['search', 'words'],
           a: '<p>The answer.</p>',
         },
       ],

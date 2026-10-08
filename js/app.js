@@ -35,6 +35,7 @@
     note: '<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',
     quiz: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 115 0c0 1.8-2.5 2-2.5 4M12 17h.01"/>',
     refresh: '<path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6"/>',
+    present: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8M10.5 8l4 2-4 2z"/>',
     layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
   };
   const ico = (n, s = 18, cls = '') =>
@@ -61,7 +62,6 @@
       s.qna = (s.qna || []).map((q, qi) => Object.assign({}, q, {
         key: q.id || 'q' + (qi + 1),
         id: `${m.id}/${s.id}/${q.id || 'q' + (qi + 1)}`,
-        level: ['basic', 'intermediate', 'advanced'].includes(q.level) ? q.level : 'basic',
         sec: s,
       }));
       s.notes = (s.notes || []).map((n, ni) => Object.assign({}, n, { id: n.id || 'n' + (ni + 1) }));
@@ -126,9 +126,10 @@
     }
 
     view.innerHTML = html;
+    closePresent();
+    highlight(view);
     document.title = title ? `${title} — ${site.title}` : `${site.title} · ${site.tagline}`;
     renderSidebar(p);
-    renderTopProgress();
     if (current && current.tab === 'quiz') { quiz = { sec: current.sec, i: -1, picked: null, answers: [] }; renderQuiz(); }
 
     const open = r.q.get('open');
@@ -165,20 +166,9 @@
             <button class="nav-chev" data-act="nav-mod" data-id="${esc(m.id)}" aria-label="Toggle ${esc(m.title)}">${ico('chevron', 16)}</button>
           </div>
           <div class="nav-subs">
-            ${m.sections.map((s) => {
-              const c = secCounts(s);
-              const done = c.total > 0 && c.known === c.total;
-              return `<a class="nav-sub ${inMod === m.id && inSec === s.id ? 'is-active' : ''}" href="${secHref(s)}"><span>${esc(s.title)}</span>${done ? `<span class="done">${ico('check', 14)}</span>` : c.total ? `<span class="count">${c.known}/${c.total}</span>` : ''}</a>`;
-            }).join('')}
+            ${m.sections.map((s) => `<a class="nav-sub ${inMod === m.id && inSec === s.id ? 'is-active' : ''}" href="${secHref(s)}"><span>${esc(s.title)}</span></a>`).join('')}
           </div>
         </div>`).join('') || '<p class="muted" style="padding:8px 12px;font-size:14px">No modules yet.</p>'}`;
-  }
-
-  function renderTopProgress() {
-    const t = totals(), el = $('#top-progress');
-    if (!t.total) { el.hidden = true; return; }
-    el.hidden = false;
-    el.innerHTML = `<span><b>${t.known}</b> / ${t.total} known</span><div class="bar"><i style="width:${pct(t.known, t.total)}%"></i></div>`;
   }
 
   /* ---------- views ---------- */
@@ -199,21 +189,18 @@
         <p>${esc(m.summary || '')}</p>
         <div class="card-foot">
           <div class="card-meta"><span>${ico('layers', 14)}${plural(m.sections.length, 'sub-module')}</span><span>${ico('qna', 14)}${c.total} Q&amp;A</span><span>${ico('quiz', 14)}${plural(nq, 'quiz question')}</span></div>
-          <div class="card-prog"><div class="bar"><i style="width:${pct(c.known, c.total)}%"></i></div><span>${c.known}/${c.total}</span></div>
+          <div class="card-prog"><span>${c.known}/${c.total}</span></div>
         </div>
       </a>`;
   };
 
   function viewHome() {
     const first = mods[0];
-    const firstSec = flat[0];
     const cont = state.last && state.last !== '#/' ? state.last : '';
     const startHref = cont || (first ? `#/m/${first.id}` : '#/recap');
     const ups = updatesList();
     const shown = ups.slice(0, 4);
 
-    const mockMods = mods.slice(0, 4).map((m, i) => `<div class="m-item ${i === 0 ? 'on' : ''}">${esc(m.title)}</div>`).join('') || '<div class="m-item">No modules yet</div>';
-    const q = (tab) => (firstSec ? secHref(firstSec, tab) : '#/');
 
     return `
     <div class="page wide">
@@ -226,30 +213,7 @@
             <button class="link-arrow" data-act="scroll" data-target="modules-sec">Browse modules ${ico('arrow', 16)}</button>
           </div>
         </div>
-        <div class="hero-card" aria-label="Preview of the guide">
-          <div class="mock">
-            <div class="mock-bar"><i></i><i></i><i></i></div>
-            <div class="mock-body">
-              <div class="mock-side">
-                <div class="m-title">${esc(site.title)}</div>
-                <div class="m-item on">Overview</div>
-                <div class="m-item">Quick recap</div>
-                <div class="m-label">Modules</div>
-                ${mockMods}
-              </div>
-              <div class="mock-main">
-                <h3>What should we revise today?</h3>
-                <div class="mock-cards">
-                  <a class="mock-card" href="${q('qna')}"><span class="mc-ico mc-green">${ico('qna', 12)}</span>Practice Q&amp;A</a>
-                  <a class="mock-card" href="${q('quiz')}"><span class="mc-ico mc-amber">${ico('quiz', 12)}</span>Take a quiz</a>
-                  <a class="mock-card" href="${q('notes')}"><span class="mc-ico mc-gray">${ico('note', 12)}</span>Read notes</a>
-                  <a class="mock-card" href="#/recap"><span class="mc-ico mc-green">${ico('bookmark', 12)}</span>Quick recap</a>
-                </div>
-                <button class="mock-input" data-act="search-open"><span>Search any topic…</span><span class="mock-send">${ico('up', 11)}</span></button>
-              </div>
-            </div>
-          </div>
-        </div>
+        ${(site.stack || []).length ? `<div class="logos">${site.stack.map((t) => `<a class="logo" href="${esc(t.url)}" target="_blank" rel="noopener" title="${esc(t.name)}" aria-label="${esc(t.name)}"><img src="${esc(t.icon)}" alt="${esc(t.name)}" width="64" height="64" loading="lazy"></a>`).join('')}</div>` : ''}
       </section>
 
       <div class="section-head" id="modules-sec"><h2 class="h2">Modules</h2></div>
@@ -272,7 +236,7 @@
       <div class="eyebrow"><a href="#/">Overview</a><span class="sep">/</span><span>Module ${pad(m.num)}</span>${m.sample ? '<span class="tag sample">Sample</span>' : ''}</div>
       <h1 class="display md">${esc(m.title)}</h1>
       <p class="lead" style="margin-top:20px">${esc(m.summary || '')}</p>
-      ${c.total ? `<div class="card-prog" style="margin-top:28px;max-width:360px"><div class="bar"><i style="width:${pct(c.known, c.total)}%"></i></div><span>${c.known} of ${c.total} questions known</span></div>` : ''}
+      ${c.total ? `<div class="card-prog"><span>${c.known} of ${c.total} questions known</span></div>` : ''}
       <div class="section-head" style="margin:56px 0 24px"><h2 class="h2" style="font-size:28px">Sub-modules</h2></div>
       <div class="cards">${m.sections.map((s) => {
         const sc = secCounts(s);
@@ -284,7 +248,7 @@
           <p>${esc(s.description || '')}</p>
           <div class="card-foot">
             <div class="card-meta">${s.qna.length ? `<span>${ico('qna', 14)}${s.qna.length} Q&amp;A</span>` : ''}${s.notes.length ? `<span>${ico('note', 14)}${plural(s.notes.length, 'note')}</span>` : ''}${s.quiz.length ? `<span>${ico('quiz', 14)}Quiz${best ? ` · best ${best.best}/${best.total}` : ''}</span>` : ''}</div>
-            ${sc.total ? `<div class="card-prog"><div class="bar"><i style="width:${pct(sc.known, sc.total)}%"></i></div><span>${sc.known}/${sc.total}</span></div>` : ''}
+            ${sc.total ? `<div class="card-prog"><span>${sc.known}/${sc.total}</span></div>` : ''}
           </div>
         </a>`;
       }).join('') || '<div class="empty"><h3>No sub-modules yet</h3></div>'}</div>
@@ -303,7 +267,7 @@
     current = { sec: s, tab };
 
     let body = '';
-    if (tab === 'overview') body = tabOverview(s);
+    if (tab === 'overview') body = (s.intro ? `<div class="doc-tools"><button class="btn btn-dark btn-xs" data-act="present-doc">${ico('present', 14)}Present</button></div>` : '') + tabOverview(s);
     else if (tab === 'qna') body = tabQna(s);
     else if (tab === 'notes') body = tabNotes(s, noteId);
     else body = '<div class="quiz" id="quiz-root"></div>';
@@ -316,7 +280,7 @@
       <div class="eyebrow"><a href="#/m/${esc(m.id)}">${esc(m.title)}</a><span class="sep">/</span><span>${pad(m.num)}.${pad(s.num)}</span></div>
       <h1 class="display md">${esc(s.title)}</h1>
       ${s.description ? `<p class="lead" style="margin-top:20px">${esc(s.description)}</p>` : ''}
-      <nav class="tabs" aria-label="Sections">${tabs.map((t) => `<a class="tab ${t.k === tab ? 'is-active' : ''}" href="${secHref(s, t.k)}">${t.label}${t.n ? `<span class="n">${t.n}</span>` : ''}</a>`).join('')}</nav>
+      ${tabs.length > 1 ? `<nav class="tabs" aria-label="Sections">${tabs.map((t) => `<a class="tab ${t.k === tab ? 'is-active' : ''}" href="${secHref(s, t.k)}">${t.label}${t.n ? `<span class="n">${t.n}</span>` : ''}</a>`).join('')}</nav>` : '<div style="height:32px"></div>'}
       ${body}
       <div class="pager">
         ${prev ? `<a href="${secHref(prev)}"><small>Previous</small><span>${esc(prev.title)}</span></a>` : '<span></span>'}
@@ -339,11 +303,11 @@
   function qaItem(q, i, ctx) {
     const st = state.qna[q.id] || '';
     return `
-    <article class="qa" data-id="${esc(q.id)}" data-key="${esc(q.key)}" data-level="${q.level}" data-state="${st}">
+    <article class="qa" data-id="${esc(q.id)}" data-key="${esc(q.key)}" data-state="${st}">
       <button class="qa-q" data-act="toggle" aria-expanded="false">
         <span class="qa-num">${pad(i + 1)}</span>
         <span class="qa-text">${q.q}</span>
-        <span class="qa-meta"><span class="tag ${q.level}">${cap(q.level)}</span><span class="state-dot" title="Progress"></span></span>
+        <span class="qa-meta"><span class="state-dot" title="Progress"></span></span>
         ${ico('chevron', 16, 'qa-chev')}
       </button>
       <div class="qa-a"><div class="qa-a-in">
@@ -361,19 +325,12 @@
     `<span><b>${c.total}</b> questions</span><span class="g"><b>${c.known}</b> known</span><span class="a"><b>${c.rev}</b> to revise</span>`;
 
   function tabQna(s) {
-    const levels = ['basic', 'intermediate', 'advanced'].filter((l) => s.qna.some((q) => q.level === l));
     return `
       <div class="toolbar">
-        <div class="pills" role="group" aria-label="Filter">
-          <button class="pill is-active" data-act="filter" data-f="all">All</button>
-          ${levels.map((l) => `<button class="pill" data-act="filter" data-f="${l}">${cap(l)}</button>`).join('')}
-          <button class="pill" data-act="filter" data-f="revise">To revise</button>
-        </div>
-        <button class="linkish" data-act="expand-all">Expand all</button>
+        <div class="summary-line" id="qna-summary">${summaryLine(secCounts(s))}</div>
+        <div class="tools"><button class="btn btn-dark btn-xs" data-act="present">${ico('present', 14)}Present</button><button class="linkish" data-act="expand-all">Expand all</button></div>
       </div>
-      <div class="summary-line" id="qna-summary" style="margin-bottom:20px">${summaryLine(secCounts(s))}</div>
-      <div class="qa-list" id="qa-list">${s.qna.map((q, i) => qaItem(q, i)).join('')}</div>
-      <div class="empty" id="qa-empty" hidden style="margin-top:20px"><h3>Nothing to show</h3><p>No questions match this filter.</p></div>`;
+      <div class="qa-list" id="qa-list">${s.qna.map((q, i) => qaItem(q, i)).join('')}</div>`;
   }
 
   function tabNotes(s, noteId) {
@@ -472,7 +429,6 @@
     const last = quiz.i === qs.length - 1;
     root.innerHTML = `
       <div class="quiz-head"><span>Question <b>${quiz.i + 1}</b> of ${qs.length}</span><span>${rec ? `Best ${rec.best}/${rec.total}` : ''}</span></div>
-      <div class="bar"><i style="width:${pct(quiz.i + (answered ? 1 : 0), qs.length)}%"></i></div>
       <h2 class="quiz-q">${q.q}</h2>
       <div class="opts">${q.options.map((o, i) => {
         let cls = '';
@@ -509,22 +465,10 @@
       qa.dataset.state = state.qna[id] || '';
       if (current && current.tab === 'qna') $('#qna-summary').innerHTML = summaryLine(secCounts(current.sec));
       renderSidebar(parseRoute().parts);
-      renderTopProgress();
-    },
-    filter(el) {
-      const f = el.dataset.f;
-      $$('.pill').forEach((p) => p.classList.toggle('is-active', p === el));
-      let shown = 0;
-      $$('#qa-list .qa').forEach((qa) => {
-        const ok = f === 'all' || qa.dataset.level === f || (f === 'revise' && qa.dataset.state === 'revise');
-        qa.hidden = !ok;
-        if (ok) shown++;
-      });
-      $('#qa-empty').hidden = shown > 0;
-    },
+      },
     'expand-all'(el) {
       const open = el.textContent.trim() === 'Expand all';
-      $$('#qa-list .qa:not([hidden])').forEach((qa) => {
+      $$('#qa-list .qa').forEach((qa) => {
         qa.classList.toggle('open', open);
         $('.qa-q', qa).setAttribute('aria-expanded', String(open));
       });
@@ -534,6 +478,26 @@
       const id = el.dataset.id;
       navOpen.has(id) ? navOpen.delete(id) : navOpen.add(id);
       el.closest('.nav-mod').classList.toggle('is-open');
+    },
+    present() { if (current && current.sec.qna.length) openPresent(current.sec, 0); },
+    'present-doc'() { if (current) openPresent(current.sec, 0, true); },
+    'pres-close': () => closePresent(),
+    'pres-prev': () => stepPresent(-1),
+    'pres-next': () => stepPresent(1),
+    'pres-mark'(el) {
+      const q = pres.sec.qna[pres.i], v = el.dataset.v;
+      if (state.qna[q.id] === v) delete state.qna[q.id]; else state.qna[q.id] = v;
+      save();
+      const row = $$('.qa', view).find((x) => x.dataset.id === q.id);
+      if (row) row.dataset.state = state.qna[q.id] || '';
+      const sm = $('#qna-summary');
+      if (sm) sm.innerHTML = summaryLine(secCounts(pres.sec));
+      renderSidebar(parseRoute().parts);
+      renderPresent(true);
+    },
+    copy(el) {
+      const pre = el.closest('.code').querySelector('pre');
+      try { navigator.clipboard.writeText(pre.textContent); el.textContent = 'Copied'; setTimeout(() => { el.textContent = 'Copy'; }, 1200); } catch { /* clipboard blocked */ }
     },
     'nav-toggle': () => document.body.classList.toggle('nav-open'),
     'nav-close': () => document.body.classList.remove('nav-open'),
@@ -556,8 +520,6 @@
       if (!resetArmed) { resetArmed = true; el.textContent = 'Click again to confirm'; setTimeout(() => { resetArmed = false; if (el.isConnected) el.textContent = 'Reset progress'; }, 4000); return; }
       resetArmed = false; state = blank(); save(); render();
     },
-    'search-open': openSearch,
-    'search-close': closeSearch,
   };
 
   document.addEventListener('click', (e) => {
@@ -567,80 +529,149 @@
     if (fn) fn(el, e);
   });
 
-  /* ---------- search ---------- */
-  let sidx = null, sel = 0, hits = [];
-  const searchEl = $('#search'), sInput = $('#search-input'), sOut = $('#search-results');
+  /* ---------- code highlighting (VS Code Light+ style) ---------- */
+  const TOKEN = new RegExp([
+    '(\\/\\/[^\\n]*|\\/\\*[\\s\\S]*?\\*\\/)',                                          // 1 comment
+    '("(?:\\\\.|[^"\\\\\\n])*"|\'(?:\\\\.|[^\'\\\\\\n])*\'|`(?:\\\\.|[^`\\\\])*`)',     // 2 string
+    '\\b(if|else|for|while|return|try|catch|finally|throw|await|async|import|export|from|break|continue|of|in|new|default)\\b', // 3 control
+    '\\b(const|let|var|function|class|extends|constructor|this|true|false|null|undefined|require)\\b',                          // 4 storage
+    '\\b(\\d+(?:\\.\\d+)?)\\b',                                                         // 5 number
+    '\\b([A-Z][A-Za-z0-9_]*)\\b',                                                       // 6 class / type
+    '\\b(git|npm)\\b',                                                                  // 7 command
+    '([A-Za-z_$][\\w$]*)(?=\\()',                                                       // 8 function
+    '(?<=\\.)([A-Za-z_$][\\w$]*)(?![\\w$(])',                                           // 9 property
+    '([A-Za-z_$][\\w$]*)',                                                              // 10 variable
+  ].join('|'), 'g');
+  const CLS = ['', 'tk-c', 'tk-s', 'tk-ctl', 'tk-st', 'tk-n', 'tk-t', 'tk-f', 'tk-f', 'tk-v', 'tk-v'];
 
-  function buildIndex() {
-    sidx = [];
-    mods.forEach((m) => {
-      sidx.push({ type: 'Module', title: m.title, sub: m.summary || '', hay: `${m.title} ${m.summary || ''}`.toLowerCase(), href: `#/m/${m.id}` });
-      m.sections.forEach((s) => {
-        sidx.push({ type: 'Sub-module', title: s.title, sub: m.title, hay: `${s.title} ${s.description || ''} ${strip(s.intro)}`.toLowerCase(), href: secHref(s) });
-        s.qna.forEach((q) => sidx.push({
-          type: 'Q&A', title: strip(q.q), sub: `${m.title} › ${s.title}`,
-          hay: `${strip(q.q)} ${strip(q.a)} ${(q.tags || []).join(' ')}`.toLowerCase(),
-          href: `${secHref(s, 'qna')}?open=${encodeURIComponent(q.key)}`,
-        }));
-        s.notes.forEach((n) => sidx.push({
-          type: 'Note', title: n.title, sub: `${m.title} › ${s.title}`,
-          hay: `${n.title} ${strip(n.body)} ${(n.tags || []).join(' ')}`.toLowerCase(),
-          href: `${secHref(s, 'notes')}/${encodeURIComponent(n.id)}`,
-        }));
-      });
+  function colorize(text) {
+    let out = '', last = 0, m;
+    TOKEN.lastIndex = 0;
+    while ((m = TOKEN.exec(text))) {
+      out += esc(text.slice(last, m.index));
+      let k = 1;
+      while (k < m.length && m[k] === undefined) k++;
+      out += `<span class="${CLS[k]}">${esc(m[0])}</span>`;
+      last = m.index + m[0].length;
+    }
+    return out + esc(text.slice(last));
+  }
+
+  function langOf(t) {
+    if (/├──|→/.test(t)) return 'text';
+    if (/^\s*(git|npm) /m.test(t)) return 'bash';
+    if (/^\s*[{[]/.test(t)) return 'json';
+    if (/^(GET|POST|PUT|PATCH|DELETE) \//m.test(t) || /^\d{3} /.test(t)) return 'http';
+    return 'javascript';
+  }
+
+  function highlight(root) {
+    $$('pre', root).forEach((pre) => {
+      if (pre.parentElement.classList.contains('code')) return;
+      const codeEl = pre.querySelector('code') || pre;
+      const text = codeEl.textContent;
+      const lang = langOf(text);
+      if (lang !== 'text') codeEl.innerHTML = colorize(text);
+      const box = document.createElement('div');
+      box.className = 'code';
+      box.innerHTML = `<div class="code-bar"><span>${lang}</span><button data-act="copy">Copy</button></div>`;
+      pre.replaceWith(box);
+      box.appendChild(pre);
     });
   }
 
-  function runSearch() {
-    if (!sidx) buildIndex();
-    const terms = sInput.value.toLowerCase().split(/\s+/).filter(Boolean);
-    if (!terms.length) { hits = sidx.filter((x) => x.type === 'Sub-module' || x.type === 'Module').slice(0, 8); }
-    else {
-      hits = sidx
-        .filter((x) => terms.every((t) => x.hay.includes(t)))
-        .map((x) => ({ x, score: terms.reduce((a, t) => a + (x.title.toLowerCase().includes(t) ? 3 : 0), 0) }))
-        .sort((a, b) => b.score - a.score)
-        .slice(0, 30)
-        .map((o) => o.x);
+  /* ---------- presentation mode for Q&A ---------- */
+  let pres = null;
+  const presEl = $('#present');
+
+  function openPresent(sec, i, doc) {
+    pres = { sec, i, doc: !!doc };
+    presEl.hidden = false;
+    document.body.style.overflow = 'hidden';
+    renderPresent(false);
+  }
+  function closePresent() {
+    if (!pres) return;
+    pres = null;
+    presEl.hidden = true;
+    presEl.innerHTML = '';
+    document.body.style.overflow = '';
+  }
+  function stepPresent(d) {
+    if (pres.doc) return;
+    const n = pres.sec.qna.length, next = pres.i + d;
+    if (next < 0 || next >= n) return;
+    pres.i = next;
+    renderPresent(false);
+  }
+  function renderPresent(keepScroll) {
+    const stage = $('.pres-stage', presEl);
+    const top = keepScroll && stage ? stage.scrollTop : 0;
+    if (pres.doc) {
+      const ds = pres.sec;
+      presEl.innerHTML = `
+        <div class="pres-top">
+          <span class="pres-title">${esc(ds.mod.title)} › ${esc(ds.title)}</span>
+          <span class="pres-count">Overview</span>
+          <button class="icon-btn" data-act="pres-close" aria-label="Close presentation">${ico('cross', 20)}</button>
+        </div>
+        <div class="pres-body">
+          <div class="pres-stage" tabindex="-1">
+            <div class="pres-inner pres-docwrap">
+              <h2 class="pres-q">${esc(ds.title)}</h2>
+              <div class="prose pres-a">${tabOverview(ds)}</div>
+            </div>
+          </div>
+        </div>`;
+      highlight(presEl);
+      const st0 = $('.pres-stage', presEl);
+      st0.scrollTop = top;
+      st0.focus({ preventScroll: true });
+      return;
     }
-    sel = 0;
-    sOut.innerHTML = hits.length
-      ? hits.map((h, i) => `<a class="sr ${i === 0 ? 'is-sel' : ''}" href="${h.href}" data-act="search-close"><span class="sr-type">${h.type}</span><span class="sr-main"><div class="sr-title">${esc(h.title)}</div><div class="sr-sub">${esc(h.sub)}</div></span></a>`).join('')
-      : `<div class="search-empty">No results for “${esc(sInput.value)}”.</div>`;
+    const s = pres.sec, q = s.qna[pres.i], n = s.qna.length, st = state.qna[q.id] || '';
+    presEl.innerHTML = `
+      <div class="pres-top">
+        <span class="pres-title">${esc(s.mod.title)} › ${esc(s.title)}</span>
+        <span class="pres-count">${pres.i + 1} / ${n}</span>
+        <button class="icon-btn" data-act="pres-close" aria-label="Close presentation">${ico('cross', 20)}</button>
+      </div>
+      <div class="pres-body">
+        <button class="pres-nav prev" data-act="pres-prev" aria-label="Previous question" ${pres.i === 0 ? 'disabled' : ''}>${ico('chevron', 24)}</button>
+        <div class="pres-stage">
+          <div class="pres-inner" data-state="${st}">
+            <div class="pres-num">Question ${pres.i + 1}</div>
+            <h2 class="pres-q">${q.q}</h2>
+            <div class="prose pres-a">${q.a}</div>
+            <div class="qa-actions pres-actions">
+              <button class="chip chip-green" data-act="pres-mark" data-v="known">${ico('check', 15)}Got it</button>
+              <button class="chip chip-amber" data-act="pres-mark" data-v="revise">${ico('refresh', 15)}Revise later</button>
+            </div>
+          </div>
+        </div>
+        <button class="pres-nav next" data-act="pres-next" aria-label="Next question" ${pres.i === n - 1 ? 'disabled' : ''}>${ico('chevron', 24)}</button>
+      </div>`;
+    highlight(presEl);
+    $('.pres-stage', presEl).scrollTop = top;
   }
 
-  function openSearch() {
-    searchEl.hidden = false;
-    sInput.value = '';
-    runSearch();
-    sInput.focus();
-  }
-  function closeSearch() { searchEl.hidden = true; }
-  const moveSel = (d) => {
-    const rows = $$('.sr', sOut);
-    if (!rows.length) return;
-    rows[sel].classList.remove('is-sel');
-    sel = (sel + d + rows.length) % rows.length;
-    rows[sel].classList.add('is-sel');
-    rows[sel].scrollIntoView({ block: 'nearest' });
-  };
-
-  sInput.addEventListener('input', runSearch);
-  sInput.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); }
-    else if (e.key === 'Enter') { const row = $$('.sr', sOut)[sel]; if (row) { closeSearch(); location.hash = row.getAttribute('href'); } }
-  });
   document.addEventListener('keydown', (e) => {
-    const typing = /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName) || e.target.isContentEditable;
-    if (e.key === 'Escape') { if (!searchEl.hidden) closeSearch(); else document.body.classList.remove('nav-open'); }
-    else if ((e.key === '/' && !typing) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) { e.preventDefault(); openSearch(); }
+    if (!pres) return;
+    if (pres.doc) {
+      const st = $('.pres-stage', presEl);
+      if (e.key === 'Escape') closePresent();
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); st.scrollBy({ top: 140, behavior: 'smooth' }); }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); st.scrollBy({ top: -140, behavior: 'smooth' }); }
+      return;
+    }
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') { e.preventDefault(); stepPresent(1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); stepPresent(-1); }
+    else if (e.key === 'Escape') closePresent();
   });
 
   /* ---------- boot ---------- */
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.body.classList.remove('nav-open'); });
   $('#nav-btn').innerHTML = ico('menu', 20);
-  $('#search-ico').innerHTML = ico('search', 16);
-  $('#search-box-ico').innerHTML = ico('search', 20);
   window.addEventListener('hashchange', render);
   render();
 })();
