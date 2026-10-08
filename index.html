@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sekher · Interview prep</title>
+  <meta name="description" content="A modular study guide with Q&A, notes and quizzes for interview preparation.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111'/%3E%3Ccircle cx='23' cy='9' r='3' fill='%231e7a4c'/%3E%3Ctext x='9' y='23' font-family='Arial' font-weight='700' font-size='18' fill='%23fff'%3ES%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <button class="icon-btn only-mobile" data-act="nav-toggle" aria-label="Open navigation" id="nav-btn"></button>
+    <a class="brand" href="#/" aria-label="Home">
+      <span class="brand-mark">S</span>
+      <span class="brand-name">Sekher</span>
+      <span class="brand-sub">Interview prep</span>
+    </a>
+    <div class="topbar-spacer"></div>
+    <div class="top-progress" id="top-progress" hidden></div>
+    <button class="search-btn" data-act="search-open" aria-label="Search">
+      <span id="search-ico"></span>
+      <span class="search-btn-text">Search</span>
+      <kbd>/</kbd>
+    </button>
+  </header>
+
+  <aside class="sidebar" id="sidebar" aria-label="Modules">
+    <nav id="nav"></nav>
+    <p class="side-foot">Your progress is saved in this browser only.</p>
+  </aside>
+  <div class="scrim" data-act="nav-close"></div>
+
+  <main class="main">
+    <div id="view" tabindex="-1"></div>
+  </main>
+
+  <div id="search" class="search" hidden>
+    <div class="search-backdrop" data-act="search-close"></div>
+    <div class="search-box" role="dialog" aria-modal="true" aria-label="Search">
+      <div class="search-input">
+        <span id="search-box-ico"></span>
+        <input id="search-input" type="text" placeholder="Search questions, notes, topics…" autocomplete="off" spellcheck="false">
+        <kbd>Esc</kbd>
+      </div>
+      <div id="search-results" class="search-results"></div>
+    </div>
+  </div>
+
+  <!-- Core -->
+  <script src="js/registry.js"></script>
+  <script src="content/site.js"></script>
+
+  <!-- MODULES: add one line per module file, in any order (sidebar order comes from `order` in each file) -->
+  <script src="content/00-start-here.js"></script>
+
+  <!-- App -->
+  <script src="js/app.js"></script>
+</body>
+</html>
