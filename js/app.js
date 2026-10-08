@@ -37,6 +37,7 @@
     refresh: '<path d="M20 11a8 8 0 10-2.3 5.7M20 5v6h-6"/>',
     present: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M12 16v4M8 20h8M10.5 8l4 2-4 2z"/>',
     layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+    lock: '<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
   };
   const ico = (n, s = 18, cls = '') =>
     `<svg class="ico ${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
@@ -55,6 +56,7 @@
   const modById = {};
   mods.forEach((m, mi) => {
     m.num = mi + 1;
+    m.locked = mi > 0 && !m.unlocked;   // only the first module is open; set `unlocked: true` on a module to open it
     modById[m.id] = m;
     m.sections = (m.sections || []).map((s, si) => {
       s.mod = m;
@@ -116,6 +118,9 @@
       const m = modById[p[1]];
       if (!p[2]) {
         html = viewModule(m); title = m.title;
+      } else if (m.locked) {
+        history.replaceState(null, '', `#/m/${m.id}`);   // sub-modules of locked modules are not reachable
+        html = viewModule(m); title = m.title;
       } else {
         const s = m.sections.find((x) => x.id === p[2]);
         if (s) { html = viewSection(s, p[3] || 'overview', p[4], r.q); title = `${s.title} · ${m.title}`; }
@@ -162,11 +167,13 @@
       ${mods.map((m) => `
         <div class="nav-mod ${navOpen.has(m.id) ? 'is-open' : ''}">
           <div class="nav-mod-row ${inMod === m.id && !inSec ? 'is-active' : ''}">
-            <a class="nav-mod-link" href="#/m/${esc(m.id)}"><span class="nav-num">${pad(m.num)}</span><span class="nav-mod-title">${esc(m.title)}</span></a>
+            <a class="nav-mod-link" href="#/m/${esc(m.id)}"><span class="nav-num">${pad(m.num)}</span><span class="nav-mod-title">${esc(m.title)}</span>${m.locked ? `<span class="nav-lock">${ico('lock', 13)}</span>` : ''}</a>
             <button class="nav-chev" data-act="nav-mod" data-id="${esc(m.id)}" aria-label="Toggle ${esc(m.title)}">${ico('chevron', 16)}</button>
           </div>
           <div class="nav-subs">
-            ${m.sections.map((s) => `<a class="nav-sub ${inMod === m.id && inSec === s.id ? 'is-active' : ''}" href="${secHref(s)}"><span>${esc(s.title)}</span></a>`).join('')}
+            ${m.sections.map((s) => m.locked
+              ? `<span class="nav-sub is-locked" aria-disabled="true"><span>${esc(s.title)}</span></span>`
+              : `<a class="nav-sub ${inMod === m.id && inSec === s.id ? 'is-active' : ''}" href="${secHref(s)}"><span>${esc(s.title)}</span></a>`).join('')}
           </div>
         </div>`).join('') || '<p class="muted" style="padding:8px 12px;font-size:14px">No modules yet.</p>'}`;
   }
@@ -237,18 +244,29 @@
       <h1 class="display md">${esc(m.title)}</h1>
       <p class="lead" style="margin-top:20px">${esc(m.summary || '')}</p>
       ${c.total ? `<div class="card-prog"><span>${c.known} of ${c.total} questions known</span></div>` : ''}
-      <div class="section-head" style="margin:56px 0 24px"><h2 class="h2" style="font-size:28px">Sub-modules</h2></div>
-      <div class="cards">${m.sections.map((s) => {
+      <div class="section-head" style="margin:56px 0 24px"><h2 class="h2" style="font-size:28px">Sub-modules</h2>${m.locked ? `<span class="tag">${ico('lock', 13)}&nbsp;Locked for now</span>` : ''}</div>
+      <div class="cards">${m.sections.map((s, idx) => {
         const sc = secCounts(s);
         const best = state.quiz[`${m.id}/${s.id}`];
+        const tone = ['green', 'amber', 'sand', 'ink'][idx % 4];
+        const icon = ['layers', 'qna', 'note', 'quiz'][idx % 4];
+        if (m.locked) {
+          return `
+        <div class="card sub tone-${tone} is-locked" aria-disabled="true">
+          <div class="card-top"><span class="sub-badge">${ico('lock', 20)}</span><span class="card-num">${pad(m.num)}.${pad(s.num)}</span></div>
+          <h3>${esc(s.title)}</h3>
+          <div class="card-foot"><span class="sub-go">Locked</span></div>
+        </div>`;
+        }
         return `
-        <a class="card" href="${secHref(s)}">
-          <div class="card-top"><span class="card-num">${pad(m.num)}.${pad(s.num)}</span></div>
+        <a class="card sub tone-${tone}" href="${secHref(s)}">
+          <div class="card-top"><span class="sub-badge">${ico(icon, 20)}</span><span class="card-num">${pad(m.num)}.${pad(s.num)}</span></div>
           <h3>${esc(s.title)}</h3>
           <p>${esc(s.description || '')}</p>
           <div class="card-foot">
             <div class="card-meta">${s.qna.length ? `<span>${ico('qna', 14)}${s.qna.length} Q&amp;A</span>` : ''}${s.notes.length ? `<span>${ico('note', 14)}${plural(s.notes.length, 'note')}</span>` : ''}${s.quiz.length ? `<span>${ico('quiz', 14)}Quiz${best ? ` · best ${best.best}/${best.total}` : ''}</span>` : ''}</div>
             ${sc.total ? `<div class="card-prog"><span>${sc.known}/${sc.total}</span></div>` : ''}
+            <span class="sub-go">Open ${ico('arrow', 14)}</span>
           </div>
         </a>`;
       }).join('') || '<div class="empty"><h3>No sub-modules yet</h3></div>'}</div>
