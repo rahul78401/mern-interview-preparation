@@ -575,11 +575,35 @@
     return out + esc(text.slice(last));
   }
 
+  /* SQL: keywords (multi-word ones first), functions, strings, numbers, -- comments */
+  const SQL_TOKEN = new RegExp([
+    '(--[^\\n]*)',                                                                       // 1 comment
+    '(\'(?:\'\'|[^\'])*\')',                                                             // 2 string
+    '\\b(SELECT|DISTINCT|FROM|WHERE|GROUP BY|HAVING|ORDER BY|LIMIT|OFFSET|AS|ASC|DESC|NOT EXISTS|EXISTS|AND|OR|NOT|IN|BETWEEN|LIKE|IS NOT NULL|IS NULL|NULL|INSERT INTO|VALUES|UPDATE|SET|DELETE FROM|LEFT JOIN|RIGHT JOIN|FULL JOIN|INNER JOIN|CROSS JOIN|JOIN|ON|DEFAULT|PRIMARY KEY|UNIQUE)\\b', // 3 keyword
+    '\\b(\\d+(?:\\.\\d+)?)\\b',                                                         // 4 number
+    '([A-Za-z_][\\w]*)(?=\\()',                                                          // 5 function
+  ].join('|'), 'gi');
+  const SQL_CLS = ['', 'tk-c', 'tk-s', 'tk-ctl', 'tk-n', 'tk-f'];
+
+  function colorizeSql(text) {
+    let out = '', last = 0, m;
+    SQL_TOKEN.lastIndex = 0;
+    while ((m = SQL_TOKEN.exec(text))) {
+      out += esc(text.slice(last, m.index));
+      let k = 1;
+      while (k < m.length && m[k] === undefined) k++;
+      out += `<span class="${SQL_CLS[k]}">${esc(m[0])}</span>`;
+      last = m.index + m[0].length;
+    }
+    return out + esc(text.slice(last));
+  }
+
   function langOf(t) {
     if (/├──|→/.test(t)) return 'text';
     if (/^\s*(git|npm) /m.test(t)) return 'bash';
     if (/^\s*[{[]/.test(t)) return 'json';
     if (/^(GET|POST|PUT|PATCH|DELETE) \//m.test(t) || /^\d{3} /.test(t)) return 'http';
+    if (/^\s*(--[^\n]*\n\s*)*(SELECT|INSERT INTO|UPDATE|DELETE FROM|WITH)\b/i.test(t)) return 'sql';
     return 'javascript';
   }
 
@@ -589,7 +613,8 @@
       const codeEl = pre.querySelector('code') || pre;
       const text = codeEl.textContent;
       const lang = langOf(text);
-      if (lang !== 'text') codeEl.innerHTML = colorize(text);
+      if (lang === 'sql') codeEl.innerHTML = colorizeSql(text);
+      else if (lang !== 'text') codeEl.innerHTML = colorize(text);
       const box = document.createElement('div');
       box.className = 'code';
       box.innerHTML = `<div class="code-bar"><span>${lang}</span><button data-act="copy">Copy</button></div>`;

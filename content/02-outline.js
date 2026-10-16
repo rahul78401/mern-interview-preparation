@@ -34,6 +34,9 @@
       'Logging', 'API Versioning', 'Rate Limiting', 'Lifecycle Hooks', 'Testing in NestJS',
     ]],
 
+    /* Sub-modules for SQL live in content/03-sql-*.js */
+    ['sql', 'SQL', 'How databases store, relate and protect data, and the language used to talk to them.', []],
+
     ['system-design', 'System Design', 'Designing systems that scale.', [
       'Scalability', 'Vertical vs Horizontal Scaling', 'Load Balancing', 'Caching & CDN', 'Database Scaling',
       'Consistency vs Availability', 'Microservices vs Monolith', 'API Gateway', 'Message-Driven Design',
