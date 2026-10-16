@@ -579,7 +579,7 @@
   const SQL_TOKEN = new RegExp([
     '(--[^\\n]*)',                                                                       // 1 comment
     '(\'(?:\'\'|[^\'])*\')',                                                             // 2 string
-    '\\b(SELECT|DISTINCT|FROM|WHERE|GROUP BY|HAVING|ORDER BY|LIMIT|OFFSET|AS|ASC|DESC|NOT EXISTS|EXISTS|AND|OR|NOT|IN|BETWEEN|LIKE|IS NOT NULL|IS NULL|NULL|INSERT INTO|VALUES|UPDATE|SET|DELETE FROM|LEFT JOIN|RIGHT JOIN|FULL JOIN|INNER JOIN|CROSS JOIN|JOIN|ON|DEFAULT|PRIMARY KEY|UNIQUE)\\b', // 3 keyword
+    '\\b(SELECT|DISTINCT|FROM|WHERE|GROUP BY|HAVING|ORDER BY|LIMIT|OFFSET|AS|ASC|DESC|NOT EXISTS|EXISTS|AND|OR|NOT|IN|BETWEEN|LIKE|ILIKE|IS NOT NULL|IS NULL|NULL|INSERT INTO|VALUES|UPDATE|SET TRANSACTION ISOLATION LEVEL|SET|DELETE FROM|LEFT JOIN|RIGHT JOIN|FULL JOIN|INNER JOIN|CROSS JOIN|JOIN|ON DELETE CASCADE|ON DELETE SET NULL|ON|DEFAULT|PRIMARY KEY|FOREIGN KEY|REFERENCES|UNIQUE|CHECK|CONSTRAINT|CREATE UNIQUE INDEX|CREATE INDEX|CREATE TABLE|ALTER TABLE|DROP TABLE|USING|EXPLAIN ANALYZE|EXPLAIN|WITH RECURSIVE|WITH|CASE|WHEN|THEN|ELSE|END|OVER|PARTITION BY|UNION ALL|UNION|INTERSECT|EXCEPT|FOR UPDATE|BEGIN|COMMIT|ROLLBACK|BIGINT|INTEGER|INT|VARCHAR|TEXT|TIMESTAMP|BOOLEAN|DECIMAL|NUMERIC|GENERATED ALWAYS AS IDENTITY)\\b', // 3 keyword
     '\\b(\\d+(?:\\.\\d+)?)\\b',                                                         // 4 number
     '([A-Za-z_][\\w]*)(?=\\()',                                                          // 5 function
   ].join('|'), 'gi');
@@ -603,7 +603,8 @@
     if (/^\s*(git|npm) /m.test(t)) return 'bash';
     if (/^\s*[{[]/.test(t)) return 'json';
     if (/^(GET|POST|PUT|PATCH|DELETE) \//m.test(t) || /^\d{3} /.test(t)) return 'http';
-    if (/^\s*(--[^\n]*\n\s*)*(SELECT|INSERT INTO|UPDATE|DELETE FROM|WITH)\b/i.test(t)) return 'sql';
+    if (/^\s*(Seq Scan|Index Scan|Index Only Scan|Bitmap Heap Scan|Limit  |Sort  |Hash Join|Nested Loop|Aggregate)/.test(t)) return 'text';   // EXPLAIN output
+    if (/^\s*(--[^\n]*\n\s*)*(SELECT|INSERT INTO|UPDATE|DELETE FROM|WITH|CREATE|ALTER|EXPLAIN|BEGIN|COMMIT|ROLLBACK|SET TRANSACTION)\b/i.test(t)) return 'sql';
     return 'javascript';
   }
 

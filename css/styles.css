@@ -703,3 +703,35 @@ figure.figure { margin: 24px 0; }
 .relsvg, .matchsvg { display: block; width: 100%; height: auto; }
 .jfig { margin: 6px 0 10px; }
 .jbul { margin: 0; padding-left: 20px; display: grid; gap: 10px; font-size: 14.5px; }
+
+/* ---------- SQL levels 3-5 extras ---------- */
+.jh4 { font-size: 16px; font-weight: 600; margin: 22px 0 10px; }
+.jgrid.j4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); }
+.jcard.good { border-top: 3px solid var(--green); }
+.jcard.warn { border-top: 3px solid var(--amber); }
+.jletter { display: inline-grid; place-items: center; width: 30px; height: 30px; margin-right: 10px; border-radius: 9px; background: #111; color: #fff; font-size: 15px; font-weight: 700; vertical-align: 1px; }
+.jbad { color: var(--amber-ink); font-weight: 500; }
+.jyes, .jno { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+.jyes { background: var(--amber-soft); color: var(--amber-ink); }
+.jno { background: var(--green-soft); color: var(--green-ink); }
+.jtime { width: 100%; border-collapse: collapse; font-size: 13px; margin: 8px 0 0; }
+.jtime th, .jtime td { padding: 8px 8px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.jtime th { background: var(--soft); font-weight: 600; font-size: 12px; }
+.jtime td:first-child, .jtime th:first-child { width: 22px; color: var(--faint); }
+.jtime code { font-size: 12px; white-space: normal; word-break: break-word; }
+.jtime tr.hl td { background: var(--amber-soft); }
+.jbars { display: grid; gap: 14px; margin: 6px 0; }
+.jbar-row { display: grid; grid-template-columns: 90px 1fr; gap: 12px; align-items: center; }
+.jbar-l { font-size: 14px; color: var(--muted); }
+.jbar-w { display: grid; gap: 5px; }
+.jbar { position: relative; display: flex; align-items: center; gap: 10px; }
+.jbar i { display: block; height: 14px; border-radius: 4px; }
+.jbar i.amber { background: var(--amber); }
+.jbar i.green { background: var(--green); }
+.jbar span { font-size: 12.5px; color: var(--muted); font-family: var(--mono); white-space: nowrap; }
+.jkey { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; }
+.jkey.amber { background: var(--amber); }
+.jkey.green { background: var(--green); }
+
+.jsec > .jcard, .jsec > .callout { margin-bottom: var(--jgap); }
+.jsec .jgrid + .callout { margin-top: 0; }
