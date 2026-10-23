@@ -37,6 +37,9 @@
     /* Sub-modules for SQL live in content/03-sql-*.js */
     ['sql', 'SQL', 'How databases store, relate and protect data, and the language used to talk to them.', []],
 
+    /* Quiz pages live in content/04*-sql-quiz-*.js */
+    ['sql-quiz', 'SQL Quiz', 'Test yourself on the SQL you have learned: read queries, then write them.', []],
+
     ['system-design', 'System Design', 'Designing systems that scale.', [
       'Scalability', 'Vertical vs Horizontal Scaling', 'Load Balancing', 'Caching & CDN', 'Database Scaling',
       'Consistency vs Availability', 'Microservices vs Monolith', 'API Gateway', 'Message-Driven Design',

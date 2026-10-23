@@ -1,0 +1,142 @@
+/* SQL Quiz 2: write the query. 30 tasks on the Customers / Orders / Shippings tables, up to joins.
+   The learner reads the task, writes SQL in the compiler, then compares with the expected output. */
+(() => {
+  const Q = Learn.quizKit;
+  if (!Q) return;
+  const { t, buildPage, addQuiz, customers, CUST_COLS } = Q;
+
+  const eachOrder = t(['first_name', 'item'], ['John', 'Keyboard'], ['John', 'Mouse'], ['David', 'Monitor'], ['John', 'Keyboard'], ['Robert', 'Mousepad']);
+  const threeTable = t(['first_name', 'item', 'status'], ['John', 'Keyboard', 'Pending'], ['John', 'Mouse', 'Pending'], ['David', 'Monitor', 'Delivered'], ['John', 'Keyboard', 'Delivered'], ['Robert', 'Mousepad', 'Pending']);
+
+  const groups = [
+    {
+      chip: 'SELECT · WHERE · ORDER BY', title: 'SELECT, WHERE, ORDER BY, LIMIT', sub: 'Read data from one table.',
+      qs: [
+        { tag: 'SELECT', task: 'Show <strong>every column and every row</strong> of the Customers table.',
+          sql: `SELECT *\nFROM Customers;`, result: [CUST_COLS, customers],
+          hints: ['The star (*) means all columns.', 'You only need SELECT and FROM.'] },
+        { tag: 'SELECT', task: 'Show only the <strong>first_name</strong> and <strong>country</strong> of every customer.',
+          sql: `SELECT first_name, country\nFROM Customers;`, result: t(['first_name', 'country'], ['John', 'USA'], ['Robert', 'USA'], ['David', 'UK'], ['John', 'UK'], ['Betty', 'UAE']),
+          hints: ['Name the two columns after SELECT, separated by a comma.', 'The table is Customers.'] },
+        { tag: 'WHERE', task: 'Show all columns for the customers who live in the <strong>UK</strong>.',
+          sql: `SELECT *\nFROM Customers\nWHERE country = 'UK';`, result: t(CUST_COLS, ['3', 'David', 'Robinson', '22', 'UK'], ['4', 'John', 'Reinhardt', '25', 'UK']),
+          hints: ['Filter rows with WHERE on the country column.', 'Text values go in single quotes.'] },
+        { tag: 'WHERE', task: 'Show the <strong>first_name</strong> and <strong>age</strong> of customers aged <strong>25 or older</strong>.',
+          sql: `SELECT first_name, age\nFROM Customers\nWHERE age >= 25;`, result: t(['first_name', 'age'], ['John', '31'], ['John', '25'], ['Betty', '28']),
+          hints: ['Which comparison includes the value 25 itself?', 'The operator is >=.'] },
+        { tag: 'ORDER BY', task: 'Show the <strong>item</strong> and <strong>amount</strong> of orders with an amount <strong>above 300</strong>, the biggest amount first.',
+          sql: `SELECT item, amount\nFROM Orders\nWHERE amount > 300\nORDER BY amount DESC;`, result: t(['item', 'amount'], ['Monitor', '12000'], ['Keyboard', '400'], ['Keyboard', '400']),
+          hints: ['Filter with WHERE first, then sort with ORDER BY.', 'DESC means biggest first.'] },
+        { tag: 'LIMIT', task: 'Show the <strong>2 cheapest</strong> orders (item and amount).',
+          sql: `SELECT item, amount\nFROM Orders\nORDER BY amount ASC\nLIMIT 2;`, result: t(['item', 'amount'], ['Mousepad', '250'], ['Mouse', '300']),
+          hints: ['Sort by amount from small to big.', 'Then keep only 2 rows with LIMIT.'] },
+        { tag: 'AND', task: 'Show the <strong>first_name</strong> and <strong>last_name</strong> of customers from the <strong>USA</strong> who are <strong>older than 25</strong>.',
+          sql: `SELECT first_name, last_name\nFROM Customers\nWHERE country = 'USA' AND age > 25;`, result: t(['first_name', 'last_name'], ['John', 'Doe']),
+          hints: ['You need two conditions joined with AND.', 'Robert is from the USA but he is only 22.'] },
+      ],
+    },
+    {
+      chip: 'DISTINCT · IN · BETWEEN · LIKE', title: 'DISTINCT, IN, BETWEEN, LIKE', sub: 'Remove repeats and match lists, ranges and patterns.',
+      qs: [
+        { tag: 'DISTINCT', task: 'List each <strong>item</strong> that has been ordered, <strong>without repeating</strong> any.',
+          sql: `SELECT DISTINCT item\nFROM Orders;`, result: t(['item'], ['Keyboard'], ['Mouse'], ['Monitor'], ['Mousepad']),
+          hints: ['Keyboard appears twice in Orders.', 'DISTINCT goes right after SELECT.'] },
+        { tag: 'IN', task: 'Show the <strong>first_name</strong> and <strong>country</strong> of customers from the <strong>USA or the UAE</strong>, using IN.',
+          sql: `SELECT first_name, country\nFROM Customers\nWHERE country IN ('USA', 'UAE');`, result: t(['first_name', 'country'], ['John', 'USA'], ['Robert', 'USA'], ['Betty', 'UAE']),
+          hints: ['IN takes a list of values in brackets.', "Write IN ('USA', 'UAE')."] },
+        { tag: 'BETWEEN', task: 'Show <strong>order_id, item and amount</strong> of orders with an amount from <strong>300 to 500</strong> (both included).',
+          sql: `SELECT order_id, item, amount\nFROM Orders\nWHERE amount BETWEEN 300 AND 500;`, result: t(['order_id', 'item', 'amount'], ['1', 'Keyboard', '400'], ['2', 'Mouse', '300'], ['4', 'Keyboard', '400']),
+          hints: ['BETWEEN includes both ends.', 'Write BETWEEN 300 AND 500.'] },
+        { tag: 'LIKE', task: "Show the <strong>items</strong> that <strong>start with</strong> 'Mou'.",
+          sql: `SELECT item\nFROM Orders\nWHERE item LIKE 'Mou%';`, result: t(['item'], ['Mouse'], ['Mousepad']),
+          hints: ['LIKE is used for text patterns.', '% matches any number of characters.'] },
+        { tag: 'LIKE', task: 'Show the <strong>first_name</strong> and <strong>last_name</strong> of customers whose last name <strong>ends with the letter e</strong>.',
+          sql: `SELECT first_name, last_name\nFROM Customers\nWHERE last_name LIKE '%e';`, result: t(['first_name', 'last_name'], ['John', 'Doe'], ['Betty', 'Doe']),
+          hints: ['When you care about the end of the text, put the % at the start.', "The pattern is '%e'."] },
+        { tag: 'NOT equal', task: 'Show the first names of customers who are <strong>not called John</strong>.',
+          sql: `SELECT first_name\nFROM Customers\nWHERE first_name <> 'John';`, result: t(['first_name'], ['Robert'], ['David'], ['Betty']),
+          hints: ['<> means not equal. != works too.', "first_name <> 'John'"] },
+      ],
+    },
+    {
+      chip: 'Aggregates · GROUP BY · HAVING', title: 'Aggregates, GROUP BY, HAVING', sub: 'Count, add up and group rows.',
+      qs: [
+        { tag: 'COUNT', task: 'How <strong>many customers</strong> are there?',
+          sql: `SELECT COUNT(*)\nFROM Customers;`, result: t(['COUNT(*)'], ['5']),
+          hints: ['COUNT(*) counts rows.', 'No WHERE is needed.'] },
+        { tag: 'SUM', task: 'What is the <strong>total amount</strong> of all orders?',
+          sql: `SELECT SUM(amount)\nFROM Orders;`, result: t(['SUM(amount)'], ['13350']),
+          hints: ['SUM adds the values of a column.', 'SUM(amount) from Orders.'] },
+        { tag: 'AVG', task: 'What is the <strong>average age</strong> of the customers?',
+          sql: `SELECT AVG(age)\nFROM Customers;`, result: t(['AVG(age)'], ['25.6']),
+          hints: ['There is a function for averages.', 'AVG(age) from Customers.'] },
+        { tag: 'MIN / MAX', task: 'Show the <strong>youngest and the oldest age</strong> in one query.',
+          sql: `SELECT MIN(age), MAX(age)\nFROM Customers;`, result: t(['MIN(age)', 'MAX(age)'], ['22', '31']),
+          hints: ['You can use two aggregate functions in one SELECT.', 'MIN gives the smallest, MAX the biggest.'] },
+        { tag: 'GROUP BY', task: 'Show <strong>how many customers live in each country</strong>, sorted by country.',
+          sql: `SELECT country, COUNT(*)\nFROM Customers\nGROUP BY country\nORDER BY country;`, result: t(['country', 'COUNT(*)'], ['UAE', '1'], ['UK', '2'], ['USA', '2']),
+          hints: ['Group the rows by country, then count each group.', 'Put ORDER BY country at the very end.'] },
+        { tag: 'HAVING', task: 'Show each <strong>customer_id</strong> in Orders with their <strong>total amount</strong>, but only totals <strong>above 500</strong>.',
+          sql: `SELECT customer_id, SUM(amount) AS total\nFROM Orders\nGROUP BY customer_id\nHAVING SUM(amount) > 500\nORDER BY customer_id;`, result: t(['customer_id', 'total'], ['3', '12000'], ['4', '700']),
+          hints: ['Group by customer_id and use SUM(amount).', 'Filter the groups with HAVING, not WHERE.'] },
+        { tag: 'GROUP BY', task: 'Show <strong>how many shippings</strong> there are for each <strong>status</strong>.',
+          sql: `SELECT status, COUNT(*)\nFROM Shippings\nGROUP BY status\nORDER BY status;`, result: t(['status', 'COUNT(*)'], ['Delivered', '2'], ['Pending', '3']),
+          hints: ['The table is Shippings. Group by its status column.', 'COUNT(*) counts the rows in each group.'] },
+      ],
+    },
+    {
+      chip: 'INSERT · UPDATE · DELETE', title: 'INSERT, UPDATE, DELETE', sub: 'Change data, then check the result. These tasks change the tables, so run the setup SQL again to reset.',
+      qs: [
+        { tag: 'INSERT', task: 'Add a new customer: <strong>id 6, Meena Rao, age 30, from India</strong>. Then show the whole Customers table to check it.',
+          sql: `INSERT INTO Customers (customer_id, first_name, last_name, age, country)\nVALUES (6, 'Meena', 'Rao', 30, 'India');\n\nSELECT * FROM Customers;`, result: [CUST_COLS, [...customers, ['6', 'Meena', 'Rao', '30', 'India']]],
+          hints: ['INSERT INTO table (columns) VALUES (values).', 'Keep the values in the same order as the columns.'] },
+        { tag: 'UPDATE', task: "Change <strong>Betty's age to 29</strong>, then show her first_name and age.",
+          sql: `UPDATE Customers\nSET age = 29\nWHERE first_name = 'Betty';\n\nSELECT first_name, age\nFROM Customers\nWHERE first_name = 'Betty';`, result: t(['first_name', 'age'], ['Betty', '29']),
+          hints: ['UPDATE table SET column = value WHERE ...', 'Without WHERE every customer would get age 29.'] },
+        { tag: 'DELETE', task: 'Delete all <strong>Pending</strong> shippings, then count how many shippings are left.',
+          sql: `DELETE FROM Shippings\nWHERE status = 'Pending';\n\nSELECT COUNT(*)\nFROM Shippings;`, result: t(['COUNT(*)'], ['2']),
+          hints: ['DELETE FROM table WHERE condition.', 'Three of the five shippings are Pending.'] },
+        { tag: 'UPDATE', task: 'Increase the amount of every <strong>Keyboard</strong> order by <strong>50</strong>, then show the item and amount of the keyboard orders.',
+          sql: `UPDATE Orders\nSET amount = amount + 50\nWHERE item = 'Keyboard';\n\nSELECT item, amount\nFROM Orders\nWHERE item = 'Keyboard';`, result: t(['item', 'amount'], ['Keyboard', '450'], ['Keyboard', '450']),
+          hints: ['You can use the old value in SET: amount = amount + 50.', "Limit the change with WHERE item = 'Keyboard'."] },
+      ],
+    },
+    {
+      chip: 'Joins', title: 'Joins', sub: 'Combine the tables. This is where the quiz ends.',
+      qs: [
+        { tag: 'INNER JOIN', task: "Show each customer's <strong>first_name</strong> with the <strong>item</strong> they ordered. Customers without orders must <strong>not</strong> appear. Sort by order_id.",
+          sql: `SELECT c.first_name, o.item\nFROM Customers c\nINNER JOIN Orders o\n  ON c.customer_id = o.customer_id\nORDER BY o.order_id;`, result: eachOrder,
+          hints: ['Customers.customer_id matches Orders.customer_id.', 'INNER JOIN keeps only the matches.'] },
+        { tag: 'LEFT JOIN', task: 'Show <strong>every customer</strong> with the items they ordered. Customers with <strong>no orders must still appear</strong>. Sort by customer_id, then order_id.',
+          sql: `SELECT c.first_name, o.item\nFROM Customers c\nLEFT JOIN Orders o\n  ON c.customer_id = o.customer_id\nORDER BY c.customer_id, o.order_id;`,
+          result: t(['first_name', 'item'], ['John', 'Keyboard'], ['Robert', 'Mousepad'], ['David', 'Monitor'], ['John', 'Keyboard'], ['John', 'Mouse'], ['Betty', 'NULL']),
+          hints: ['Which table must be kept in full? Write it before LEFT JOIN.', 'Betty has no order, so her item is NULL.'] },
+        { tag: 'Unmatched rows', task: 'Find the customers who have <strong>never placed an order</strong>.',
+          sql: `SELECT c.first_name\nFROM Customers c\nLEFT JOIN Orders o\n  ON c.customer_id = o.customer_id\nWHERE o.order_id IS NULL;`, result: t(['first_name'], ['Betty']),
+          hints: ['Start with a LEFT JOIN from Customers to Orders.', 'Then keep the rows where the Orders side is NULL (use IS NULL).'] },
+        { tag: 'JOIN + COUNT', task: 'For <strong>every customer</strong>, show the first_name and <strong>how many orders</strong> they placed (0 if none). Order by customer_id.',
+          sql: `SELECT c.first_name, COUNT(o.order_id) AS orders\nFROM Customers c\nLEFT JOIN Orders o\n  ON c.customer_id = o.customer_id\nGROUP BY c.customer_id, c.first_name\nORDER BY c.customer_id;`,
+          result: t(['first_name', 'orders'], ['John', '1'], ['Robert', '1'], ['David', '1'], ['John', '2'], ['Betty', '0']),
+          hints: ['Use a LEFT JOIN so Betty is kept, then GROUP BY customer.', 'COUNT(o.order_id) skips NULL, so Betty gets 0.'] },
+        { tag: 'JOIN + WHERE', task: 'Show the <strong>first_name</strong> and shipping <strong>status</strong> of customers whose shipment is <strong>Delivered</strong>, ordered by customer_id.',
+          sql: `SELECT c.first_name, s.status\nFROM Customers c\nJOIN Shippings s\n  ON c.customer_id = s.customer\nWHERE s.status = 'Delivered'\nORDER BY c.customer_id;`, result: t(['first_name', 'status'], ['John', 'Delivered'], ['David', 'Delivered']),
+          hints: ['Shippings stores the customer id in the column named customer.', "Add WHERE s.status = 'Delivered'."] },
+        { tag: '3-table JOIN', task: 'Show <strong>first_name, item and shipping status</strong> for every order, sorted by order_id. You need all three tables.',
+          sql: `SELECT c.first_name, o.item, s.status\nFROM Customers c\nJOIN Orders o     ON o.customer_id = c.customer_id\nJOIN Shippings s  ON s.customer = c.customer_id\nORDER BY o.order_id;`, result: threeTable,
+          hints: ['Join in steps: first Customers and Orders, then add Shippings.', 'Each JOIN needs its own ON condition.'] },
+      ],
+    },
+  ];
+
+  addQuiz({
+    id: 'sql-quiz-write',
+    title: 'Quiz 2: Write the Query',
+    description: '30 tasks. Look at the tables, write the query in the compiler, then compare with the expected output.',
+    intro: buildPage({
+      kind: 'write', level: 'Quiz 2', title: 'Write the query',
+      intro: 'Each task asks you to get some data out of the three tables. Write the query in the SQL compiler, press Run SQL, then compare with the expected output. Open a hint, or the solution, only when you need it.',
+      items: ['30 tasks', 'Filtering, sorting, LIMIT', 'DISTINCT, IN, BETWEEN, LIKE', 'Aggregates, GROUP BY, HAVING', 'INSERT, UPDATE, DELETE', 'INNER, LEFT and 3-table joins'],
+      groups,
+    }),
+  });
+})();

@@ -604,7 +604,7 @@
     if (/^\s*[{[]/.test(t)) return 'json';
     if (/^(GET|POST|PUT|PATCH|DELETE) \//m.test(t) || /^\d{3} /.test(t)) return 'http';
     if (/^\s*(Seq Scan|Index Scan|Index Only Scan|Bitmap Heap Scan|Limit  |Sort  |Hash Join|Nested Loop|Aggregate)/.test(t)) return 'text';   // EXPLAIN output
-    if (/^\s*(--[^\n]*\n\s*)*(SELECT|INSERT INTO|UPDATE|DELETE FROM|WITH|CREATE|ALTER|EXPLAIN|BEGIN|COMMIT|ROLLBACK|SET TRANSACTION)\b/i.test(t)) return 'sql';
+    if (/^\s*(--[^\n]*\n\s*)*(SELECT|INSERT INTO|UPDATE|DELETE FROM|WITH|CREATE|ALTER|DROP|EXPLAIN|BEGIN|COMMIT|ROLLBACK|SET TRANSACTION)\b/i.test(t)) return 'sql';
     return 'javascript';
   }
 
