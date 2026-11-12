@@ -134,7 +134,7 @@
     description: '30 tasks. Look at the tables, write the query in the compiler, then compare with the expected output.',
     intro: buildPage({
       kind: 'write', level: 'Quiz 2', title: 'Write the query',
-      intro: 'Each task asks you to get some data out of the three tables. Write the query in the SQL compiler, press Run SQL, then compare with the expected output. Open a hint, or the solution, only when you need it.',
+      intro: 'Each task asks you to get some data out of the three tables. Write the query in the SQL compiler, press Run SQL, then compare with the expected output. Open the explanation, or the solution, only when you need it.',
       items: ['30 tasks', 'Filtering, sorting, LIMIT', 'DISTINCT, IN, BETWEEN, LIKE', 'Aggregates, GROUP BY, HAVING', 'INSERT, UPDATE, DELETE', 'INNER, LEFT and 3-table joins'],
       groups,
     }),

@@ -1,4 +1,4 @@
-/* SQL Quiz engine. Builds question pages (cards with a hint panel on the right) and wires the buttons.
+/* SQL Quiz engine. Builds question pages (cards with an explanation panel on the right) and wires the buttons.
    Exposes Learn.quizKit. The two question pages (04a, 04b) only supply data. */
 (() => {
   const K = Learn.sqlKit;
@@ -59,19 +59,22 @@ INSERT INTO Shippings VALUES
   const refTables = () =>
     tv('Customers', CUST_COLS, customers) + tv('Orders', ['order_id', 'item', 'amount', 'customer_id'], orders) + tv('Shippings', ['shipping_id', 'status', 'customer'], shippings);
 
-  const lab = (kind) =>
+  const lab = (kind, ref) =>
     `<div class="qz-lab"><div class="qz-lab-main"><h4>Practice in a real SQL editor</h4>` +
-    p('Open the free Programiz online compiler in a new tab. It already has the three tables below, so you can run any query from this page.') +
+    p(ref ? 'Open the free Programiz online compiler in a new tab. This quiz has its own tables: paste the setup SQL from the box below into the editor once, run it, and then try every query from this page.' : 'Open the free Programiz online compiler in a new tab. It already has the three tables below, so you can run any query from this page.') +
     `<a class="btn btn-dark" href="${COMPILER}" target="_blank" rel="noopener">Open SQL compiler &nearr;</a>` +
     `<p class="jnote">Opens programiz.com/sql/online-compiler in a new tab.</p></div>` +
     `<ol class="tv-steps qz-lab-steps">` +
     (kind === 'read'
-      ? `<li><strong>Read</strong> the query on this page and think about what it actually does, in plain English.</li><li>Press <strong>Show options</strong> and pick the description that fits. Stuck? Open the <strong>hint</strong> on the right.</li><li><strong>Check yourself:</strong> copy the query into the editor, press <strong>Run SQL</strong> and see if the output matches your idea.</li>`
-      : `<li><strong>Read</strong> the task. Look at the reference tables to see what data you have.</li><li><strong>Write</strong> your query in the editor and press <strong>Run SQL</strong>.</li><li>Press <strong>Show expected output</strong> to compare, then <strong>Show solution</strong> if you are stuck.</li>`) +
+      ? `<li><strong>Read</strong> the query on this page and think about what it actually does, in plain English.</li><li>Press <strong>Show options</strong> and pick the description that fits. Stuck? Press <strong>Explain simply</strong> on the right.</li><li><strong>Check yourself:</strong> copy the query into the editor, press <strong>Run SQL</strong> and see if the output matches your idea.</li>`
+      : `<li><strong>Read</strong> the task. Look at the reference tables to see what data you have.${ref ? ' Paste the setup SQL into the editor first.' : ''}</li><li><strong>Write</strong> your query in the editor and press <strong>Run SQL</strong>.</li><li>Press <strong>Show expected output</strong> to compare, then <strong>Show solution</strong> if you are stuck.</li>`) +
     `</ol></div>`;
 
-  const refBand = (kind) =>
-    K.band('Reference tables', 'These are the sample tables in the editor. Every question on this page uses them.', refTables()) +
+  const refBand = (kind, ref) => ref
+    ? K.band('Reference tables', ref.sub || 'These are the tables used by every task on this page.', ref.band) +
+      `<details class="qz-setup" open><summary>Setup SQL: paste this into the editor and run it first</summary>${code(ref.setup)}` +
+      `<p class="jnote">${ref.note || 'Run this setup again whenever you want the original tables back.'}</p></details>`
+    : K.band('Reference tables', 'These are the sample tables in the editor. Every question on this page uses them.', refTables()) +
     `<details class="qz-setup"><summary>The editor shows different data? Paste this setup SQL and run it first</summary>${code(SETUP)}` +
     `<p class="jnote">${kind === 'read'
       ? 'Questions that run INSERT, UPDATE or DELETE assume the original data each time.'
@@ -82,8 +85,8 @@ INSERT INTO Shippings VALUES
   const rot = (opts, shift) => opts.map((_, k) => opts[(k - shift + opts.length) % opts.length]);   // correct option is first in the data
 
   const hints = (list) =>
-    `<aside class="qz-hint"><div class="qz-hint-title">Hints</div><ol class="qz-hints">${list.map((h) => `<li hidden>${h}</li>`).join('')}</ol>` +
-    `<button type="button" class="btn btn-light btn-xs" data-qz="hint">Show hint</button></aside>`;
+    `<aside class="qz-hint"><div class="qz-hint-title">Explanation</div><ol class="qz-hints">${list.map((h) => `<li hidden>${h}</li>`).join('')}</ol>` +
+    `<button type="button" class="btn btn-light btn-xs" data-qz="hint">Explain simply</button></aside>`;
 
   const head = (n, tag) => `<header class="qz-head"><span class="qz-num">Q${n}</span><span class="qz-tag">${esc(tag)}</span><span class="qz-state" aria-live="polite"></span></header>`;
 
@@ -99,8 +102,8 @@ INSERT INTO Shippings VALUES
       `</div>${hints(q.hints)}</div></article>`;
   };
 
-  const writeCard = (n, q) =>
-    `<article class="qz-card" data-page="write" data-id="w${n}">` + head(n, q.tag) +
+  const writeCard = (n, q, prefix = 'w') =>
+    `<article class="qz-card" data-page="write" data-id="${prefix}${n}">` + head(n, q.tag) +
     `<div class="qz-body"><div class="qz-main">` +
     `<p class="qz-task">${q.task}</p>` +
     `<div class="qz-actions"><button type="button" class="btn btn-dark btn-xs" data-qz="toggle" data-for="out" data-show="Show expected output" data-hide="Hide expected output">Show expected output</button>` +
@@ -111,19 +114,19 @@ INSERT INTO Shippings VALUES
     `</div>${hints(q.hints)}</div></article>`;
 
   /* ---------- page ---------- */
-  const buildPage = ({ kind, level, title, intro, items, groups }) => {
+  const buildPage = ({ kind, level, title, intro, items, groups, ref, idPrefix }) => {
     const total = groups.reduce((a, g) => a + g.qs.length, 0);
     let n = 0;
     const secs = groups.map((g, gi) => {
       const first = n + 1;
-      const cards = g.qs.map((q) => { n++; return kind === 'read' ? readCard(n, q) : writeCard(n, q); }).join('');
+      const cards = g.qs.map((q) => { n++; return kind === 'read' ? readCard(n, q) : writeCard(n, q, idPrefix); }).join('');
       return sec(`qz-${kind}-${gi}`, gi + 1, g.title, `${g.sub} <span class="qz-range">Q${first} to Q${n}</span>`, `<div class="qz-list">${cards}</div>`);
     });
     const chips = groups.map((g, gi) => `<button class="jchip" data-act="scroll" data-target="qz-${kind}-${gi}">${g.chip}</button>`).join('');
     const bar = `<nav class="jnav qz-bar" aria-label="On this page">${chips}` +
       `<div class="qz-prog"><span class="qz-pt"></span><span class="qz-pbar"><i style="width:0%"></i></span><button type="button" class="qz-reset" data-qz="reset">Reset</button></div></nav>`;
     return `<div class="doc jwide qz-root" data-page="${kind}" data-total="${total}">` +
-      hero({ level, title, intro, items }) + lab(kind) + bar + refBand(kind) + secs.join('') + `</div>`;
+      hero({ level, title, intro, items }) + lab(kind, ref) + bar + refBand(kind, ref) + secs.join('') + `</div>`;
   };
 
   const addQuiz = (section) => {
@@ -182,7 +185,7 @@ INSERT INTO Shippings VALUES
     card.querySelectorAll('[data-qz="toggle"]').forEach((b) => { b.textContent = b.dataset.show; });
     const sv = card.querySelector('.qz-solved'); if (sv) sv.textContent = 'Mark as solved';
     card.querySelectorAll('.qz-hints li').forEach((li) => { li.hidden = true; });
-    const hb = card.querySelector('[data-qz="hint"]'); if (hb) { hb.hidden = false; hb.textContent = 'Show hint'; }
+    const hb = card.querySelector('[data-qz="hint"]'); if (hb) { hb.hidden = false; hb.textContent = 'Explain simply'; }
     card.querySelector('.qz-state').textContent = '';
   };
 
@@ -206,9 +209,8 @@ INSERT INTO Shippings VALUES
       case 'show-opts': card.querySelector('.qz-opts').hidden = false; el.hidden = true; break;
       case 'pick': pick(card, +el.dataset.i, true); break;
       case 'hint': {
-        const next = [...card.querySelectorAll('.qz-hints li')].find((li) => li.hidden);
-        if (next) next.hidden = false;
-        if (![...card.querySelectorAll('.qz-hints li')].some((li) => li.hidden)) el.hidden = true; else el.textContent = 'Show another hint';
+        card.querySelectorAll('.qz-hints li').forEach((li) => { li.hidden = false; });
+        el.hidden = true;
         break;
       }
       case 'toggle': {
@@ -222,7 +224,7 @@ INSERT INTO Shippings VALUES
         if (!el.dataset.armed) { el.dataset.armed = '1'; el.textContent = 'Click again to confirm'; setTimeout(() => { delete el.dataset.armed; el.textContent = 'Reset'; }, 3500); return; }
         delete el.dataset.armed; el.textContent = 'Reset';
         root.querySelectorAll('.qz-card').forEach(resetCard);
-        const s = load(); delete s[root.dataset.page]; save(s);
+        const s = load(); root.querySelectorAll('.qz-card').forEach((c) => { if (s[root.dataset.page]) delete s[root.dataset.page][c.dataset.id]; }); save(s);
         break;
       }
       default: return;
@@ -235,5 +237,5 @@ INSERT INTO Shippings VALUES
   scan();
 
   const t = (cols, ...rows) => [cols, rows];   // result helper for the data files
-  window.Learn.quizKit = { buildPage, addQuiz, t, customers, orders, shippings, CUST_COLS };
+  window.Learn.quizKit = { buildPage, addQuiz, t, tv, customers, orders, shippings, CUST_COLS };
 })();

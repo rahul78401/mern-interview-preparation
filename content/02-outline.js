@@ -13,17 +13,11 @@
       'Access Modifiers', 'Decorators', 'Modules & Imports', 'tsconfig.json', 'Async & Promises in TypeScript',
     ]],
 
-    ['nodejs', 'Node.js', 'The runtime behind the backend.', [
-      'What is Node.js', 'How Node.js Works (V8 & libuv)', 'Modules: CommonJS vs ESM', 'npm & package.json',
-      'Async Patterns: Callbacks, Promises, async/await', 'Streams & Buffers', 'File System', 'Events & EventEmitter',
-      'Worker Threads & Cluster', 'process & Environment Variables', 'Error Handling & Process Events', 'Built-in Modules',
-    ]],
+    /* Sub-modules for Node.js live in content/05-nodejs.js */
+    ['nodejs', 'Node.js', 'The runtime behind the backend.', []],
 
-    ['backend', 'Backend', 'The server side: core concepts, frameworks and how requests are handled.', [
-      'Important Concepts', 'Backend Frameworks', 'Event Loop', 'Request & Response Lifecycle', 'Routing',
-      'Middleware', 'Validation & DTOs', 'Error Handling & Logging', 'Configuration & Environments',
-      'File Uploads', 'Real-time & WebSockets', 'Monolith vs Microservices', 'Clean Architecture & Layers',
-    ]],
+    /* Sub-modules for Backend live in content/06-backend.js */
+    ['backend', 'Backend', 'The server side: core concepts, frameworks and how requests are handled.', []],
 
     ['nestjs', 'NestJS', 'The framework we build with.', [
       'Introduction & CLI', 'Project Structure', 'Modules', 'Controllers & Routing', 'Providers & Services',
@@ -39,6 +33,9 @@
 
     /* Quiz pages live in content/04*-sql-quiz-*.js */
     ['sql-quiz', 'SQL Quiz', 'Test yourself on the SQL you have learned: read queries, then write them.', []],
+
+    /* Backend quiz pages live in content/07-backend-quiz.js */
+    ['backend-quiz', 'Backend Quiz', 'Test the backend basics (APIs, DTOs, HTTP) and then build small, simple APIs yourself.', []],
 
     ['system-design', 'System Design', 'Designing systems that scale.', [
       'Scalability', 'Vertical vs Horizontal Scaling', 'Load Balancing', 'Caching & CDN', 'Database Scaling',
